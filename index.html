@@ -973,11 +973,40 @@ function clearAllData(){
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 load();
+loadConfig();
 renderStates();
 renderCpfs();
 renderByrne();
-loadConfig();
 renderSummary();
+// Auto-load from Google Sheets on open
+if(data.config.scriptUrl){
+  loadFromSheets();
+}
+
+async function loadFromSheets(){
+  const statusEl=document.getElementById('sync-status');
+  statusEl.textContent='Loading...';
+  try{
+    const resp=await fetch(data.config.scriptUrl);
+    const json=await resp.json();
+    if(json.success && json.data){
+      // Merge sheet data — sheet is source of truth
+      data.states=json.data.states||[];
+      data.cpfs=json.data.cpfs||[];
+      data.byrne=json.data.byrne||[];
+      save();
+      renderStates();
+      renderCpfs();
+      renderByrne();
+      renderSummary();
+      statusEl.textContent='Loaded '+new Date().toLocaleTimeString();
+    } else {
+      statusEl.textContent='Load failed';
+    }
+  } catch(e){
+    statusEl.textContent='Offline — local data';
+  }
+}
 </script>
 </body>
 </html>
